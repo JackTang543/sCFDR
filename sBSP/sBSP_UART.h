@@ -18,6 +18,7 @@ void sBSP_UART_Debug_SendBytes(uint8_t* pData,uint16_t length);
 
 
 int sBSP_UART_DR1_Init(uint32_t bandrate);
+void sBSP_UART_DR1_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
 
 
 

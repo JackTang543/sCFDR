@@ -67,11 +67,11 @@ void sBSP_UART_Debug_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb) {
     uart2_recv_end_cb = recv_cb;
 
     if(HAL_UARTEx_ReceiveToIdle_IT(&uart2, (uint8_t*)uart2_recv_buf, sizeof(uart2_recv_buf)) != HAL_OK) {
-        sBSP_UART_Debug_Printf("串口1:空闲中断IT接收出错");
+        sBSP_UART_Debug_Printf("串口2:空闲中断IT接收出错");
     }
 
     // if(HAL_UARTEx_ReceiveToIdle_DMA(&uart2, (uint8_t*)uart2_recv_buf, sizeof(uart2_recv_buf)) != HAL_OK){
-    //     sBSP_UART_Debug_Printf("串口1:空闲中断DMA接收出错");
+    //     sBSP_UART_Debug_Printf("串口2:空闲中断DMA接收出错");
     // }
 }
 
@@ -89,6 +89,20 @@ int sBSP_UART_DR1_Init(uint32_t bandrate) {
     }
     return 0;
 }
+
+void sBSP_UART_DR1_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb) {
+    assert_param(recv_cb != NULL);
+    uart1_recv_end_cb = recv_cb;
+
+    if(HAL_UARTEx_ReceiveToIdle_IT(&uart1, (uint8_t*)uart1_recv_buf, sizeof(uart1_recv_buf)) != HAL_OK) {
+        sBSP_UART_Debug_Printf("串口1:空闲中断IT接收出错");
+    }
+
+    // if(HAL_UARTEx_ReceiveToIdle_DMA(&uart2, (uint8_t*)uart2_recv_buf, sizeof(uart2_recv_buf)) != HAL_OK){
+    //     sBSP_UART_Debug_Printf("串口1:空闲中断DMA接收出错");
+    // }
+}
+
 
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef* huart, uint16_t Size) {
     if(huart->Instance == USART1) {
@@ -114,10 +128,13 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
         */
         GPIO_InitStruct.Pin       = DR1_RX_Pin | DR1_TX_Pin;
         GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-        GPIO_InitStruct.Pull      = GPIO_NOPULL;
+        GPIO_InitStruct.Pull      = GPIO_PULLUP;
         GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
         GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
+        HAL_NVIC_EnableIRQ(USART1_IRQn);
     } else if(huart->Instance == USART2) {
         __HAL_RCC_USART2_CLK_ENABLE();
 
@@ -128,9 +145,13 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart) {
         */
         GPIO_InitStruct.Pin       = DEBUG_TX_Pin | DEBUG_RX_Pin;
         GPIO_InitStruct.Mode      = GPIO_MODE_AF_PP;
-        GPIO_InitStruct.Pull      = GPIO_NOPULL;
+        GPIO_InitStruct.Pull      = GPIO_PULLUP;
         GPIO_InitStruct.Speed     = GPIO_SPEED_FREQ_VERY_HIGH;
         GPIO_InitStruct.Alternate = GPIO_AF7_USART2;
         HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+        
+        HAL_NVIC_SetPriority(USART2_IRQn, 5, 0);
+        HAL_NVIC_EnableIRQ(USART2_IRQn);
     }
 }
