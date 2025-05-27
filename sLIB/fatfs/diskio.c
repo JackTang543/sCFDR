@@ -12,19 +12,16 @@
 
 #include "stm32f4xx_hal.h"
 
-extern SD_HandleTypeDef hsd; // 你的SDIO句柄需在外部定义
+extern SD_HandleTypeDef hsd;
 
-/* Definitions of physical drive number for each drive */
-// #define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
-// #define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
-// #define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
-#define DEV_SDCARD	0	/* Map SD card to physical drive 0 */
+#define DEV_SDCARD	0
 // #define STORAGE_BLK_NBR                  (62333952) // 32GB
 // #define STORAGE_BLK_SIZ                  (512)
 
 static uint32_t blk_number = 62333952 - 1; //默认32GB
 static uint32_t blk_size = 512; //默认512字节
+#include "sightseerUtils/sUtils.h"
 
 
 /*-----------------------------------------------------------------------*/
@@ -37,18 +34,21 @@ DSTATUS disk_status (
 {
 
 	if(pdrv == DEV_SDCARD) {
-		if(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){
-			return STA_NOINIT;
-		}else{
+		if(HAL_SD_GetCardState(&hsd) == HAL_SD_CARD_TRANSFER){
+			log_printfln("disk_status: SD卡已准备好,状态=%d",HAL_SD_GetCardState(&hsd));
 			return 0;
+
+		}else{
+			log_error("disk_status: SD卡未准备好,状态=%d",HAL_SD_GetCardState(&hsd));
+			return STA_NOINIT;
 		}
 	}else{
+		log_error("disk_status: 无效的物理驱动号 %d", pdrv);
 		return STA_NOINIT;
 	}
 }
 
 
-#include "sightseerUtils/sUtils.h"
 
 /*-----------------------------------------------------------------------*/
 /* Inidialize a Drive                                                    */
@@ -66,6 +66,7 @@ DSTATUS disk_initialize (
 
 		return 0;
 	}else{
+		log_error("disk_initialize: 无效的物理驱动号 %d", pdrv);
 		return STA_NOINIT;
 	}
 }
@@ -84,6 +85,7 @@ DRESULT disk_read (
 )
 {
 	if(pdrv != DEV_SDCARD){
+		log_error("disk_read: 无效的物理驱动号 %d", pdrv);
 		return RES_PARERR;
 	}
 
@@ -113,16 +115,15 @@ DRESULT disk_write (
 )
 {
 	if(pdrv != DEV_SDCARD){
+		log_error("disk_write: 无效的物理驱动号 %d", pdrv);
 		return RES_PARERR;
 	}
 
 
 	{
 		HAL_SD_CardStateTypeDef status = HAL_SD_GetCardState(&hsd);
-		if(status == HAL_SD_STATE_PROGRAMMING){
-			// while(HAL_SD_GetCardState(&hsd) == HAL_SD_STATE_PROGRAMMING){
-			// 	// log_printfln("等待SD卡写入完成...");
-			// }
+		while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){
+			log_printfln("等待SD卡写入完成...");
 		}
 
 	}
@@ -134,15 +135,15 @@ DRESULT disk_write (
 			return RES_ERROR;
 		}
 	}
-	// while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){
-	// 	// log_printfln("等待SD卡擦除完成...");
-	// }
+	while(HAL_SD_GetCardState(&hsd) != HAL_SD_CARD_TRANSFER){
+		log_printfln("等待SD卡擦除完成...");
+	}
 
 	HAL_StatusTypeDef status = HAL_SD_GetCardState(&hsd);
-	// if(status != HAL_SD_CARD_TRANSFER){
-	// 	log_error("SD卡擦除失败,状态=%d",status);
-	// 	return RES_ERROR;
-	// }
+	if(status != HAL_SD_CARD_TRANSFER){
+		log_error("SD卡擦除失败,状态=%d",status);
+		return RES_ERROR;
+	}
 
 	status = HAL_SD_WriteBlocks(&hsd, (uint8_t*)buff, sector, count, 2000);
 	if(status != HAL_OK){
