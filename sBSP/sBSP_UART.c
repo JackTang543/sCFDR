@@ -29,19 +29,35 @@ static sBSP_UART_RecvEndCb_t uart2_recv_end_cb;
 // DMA_HandleTypeDef hdma_usart1_rx;
 // DMA_HandleTypeDef hdma_usart1_tx;
 
-int sBSP_UART_Debug_Init(uint32_t bandrate) {
-    uart2.Instance          = USART2;
-    uart2.Init.BaudRate     = bandrate;
-    uart2.Init.WordLength   = UART_WORDLENGTH_8B;
-    uart2.Init.StopBits     = UART_STOPBITS_1;
-    uart2.Init.Parity       = UART_PARITY_NONE;
-    uart2.Init.Mode         = UART_MODE_TX_RX;
-    uart2.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-    uart2.Init.OverSampling = UART_OVERSAMPLING_16;
+#include "stm32f411xe.h"
+#include "stm32f4xx.h"
 
-    if(HAL_UART_Init(&uart2) != HAL_OK) {
-        return -1;
-    }
+
+int sBSP_UART_Debug_Init(uint32_t bandrate) {
+    // uart2.Instance          = USART2;
+    // uart2.Init.BaudRate     = bandrate;
+    // uart2.Init.WordLength   = UART_WORDLENGTH_8B;
+    // uart2.Init.StopBits     = UART_STOPBITS_1;
+    // uart2.Init.Parity       = UART_PARITY_NONE;
+    // uart2.Init.Mode         = UART_MODE_TX_RX;
+    // uart2.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+    // uart2.Init.OverSampling = UART_OVERSAMPLING_16;
+
+    // if(HAL_UART_Init(&uart2) != HAL_OK) {
+    //     return -1;
+    // }
+
+    //打开USART2时钟
+    SET_BIT(RCC->APB1ENR, RCC_APB1ENR_USART2EN);
+    
+    //纯寄存器配置USART2 波特率115200
+    
+
+
+
+
+
+
     return 0;
 }
 
